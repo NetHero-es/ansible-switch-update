@@ -1,0 +1,46 @@
+- name: Update HP Comware Switches
+  hosts: switches
+  gather_facts: false
+  tasks:
+  - name: Backup current configuration
+    comware_command:
+      commands:
+        - save current-configuration
+      authorize: yes
+      provider: "{{ hostvars[inventory_hostname]['ansible_connection'] }}"
+    register: config_backup
+
+  - name: Write configuration backup to file
+    copy:
+      content: "{{ config_backup.stdout_lines }}"
+      dest: "config_backup_{{ inventory_hostname }}.txt"
+
+  - name: Copy firmware to switch
+    copy:
+      src: /path/to/firmware.bin
+      dest: /tmp/firmware.bin
+    register: copy_result
+
+  - name: Install firmware on switch
+    comware_command:
+      commands:
+        - copy /tmp/firmware.bin flash:/
+        - boot system flash:/firmware.bin
+      authorize: yes
+      provider: "{{ hostvars[inventory_hostname]['ansible_connection'] }}"
+    register: firmware_update
+    when: copy_result.changed
+
+  - name: Wait for switch to boot
+    wait_for:
+      host: "{{ inventory_hostname }}"
+      port: 22
+      state: started
+      delay: 60
+      timeout: 300
+
+  - name: Check firmware update success
+    fail:
+      msg: "Firmware update failed on switch {{ inventory_hostname }}"
+    when: firmware_update.rc != 0
+
