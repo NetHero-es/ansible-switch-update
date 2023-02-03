@@ -4,7 +4,7 @@ This repository contains an Ansible playbook and an inventory file to update the
 
 ## Prerequisites
 
-Before you run the playbook, you need to install the following software:
+Before you run the playbook, you need to download/install the following software:
 
 - Ansible (version 2.9 or later)
 - HP Comware Firmware image
